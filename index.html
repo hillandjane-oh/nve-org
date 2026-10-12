@@ -135,12 +135,56 @@ html{color-scheme:light}
 .foot{display:flex;justify-content:center;margin-top:28px}
 .linkbtn{background:none;border:0;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px}
 body.tv .foot{display:none}
+/* view switch */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px;background:var(--bg)}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+select.in{appearance:auto}
+/* org chart */
+.chartwrap{overflow-x:auto;padding-bottom:12px}
+.orgsec{margin-bottom:40px}
+.orgsec h3{font-family:var(--display);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 16px;display:flex;align-items:center;gap:8px}
+.orgsec h3 i{width:9px;height:9px;border-radius:50%}
+.tree{display:inline-flex;justify-content:center;min-width:100%}
+.tree ul{display:flex;justify-content:center;padding:24px 0 0;margin:0;position:relative;list-style:none}
+.tree>ul{padding-top:0}
+.tree li{display:flex;flex-direction:column;align-items:center;position:relative;padding:24px 8px 0}
+.tree li::before,.tree li::after{content:"";position:absolute;top:0;width:50%;height:24px;border-top:2px solid var(--line)}
+.tree li::before{right:50%}
+.tree li::after{left:50%;border-left:2px solid var(--line)}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child>.node::before{content:"";position:absolute;top:-24px;left:50%;height:24px;border-left:2px solid var(--line)}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px solid var(--line);border-radius:0 8px 0 0}
+.tree li:first-child::after{border-radius:8px 0 0 0}
+.tree ul ul::before{content:"";position:absolute;top:0;left:50%;height:24px;border-left:2px solid var(--line)}
+.tree>ul>li{padding-top:0}
+.tree>ul>li::before,.tree>ul>li::after,.tree>ul>li>.node::before{display:none}
+.node{position:relative;width:158px;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:14px 10px 12px;text-align:center}
+.node .av{width:76px;height:76px;border-radius:50%;margin:0 auto 9px;overflow:hidden;background:var(--sunk);display:flex;align-items:center;justify-content:center}
+.node .av img{width:100%;height:100%;object-fit:cover}
+.node .av .ini{font-size:26px}
+.node.full{padding:6px}
+.node.full img.cardimg{width:100%;border-radius:10px;display:block}
+.node .nm{font-size:14.5px}
+.node .tt{font-size:12.5px}
+.node .chips{justify-content:center;margin-top:8px}
+.node .chip{font-size:9.5px}
+.node .up{font-size:11.5px;color:var(--muted);margin-top:8px;padding-top:7px;border-top:1px solid var(--line)}
+.node .edit{top:6px;right:6px;padding:4px 8px;font-size:11.5px}
+body.tv .node .edit{display:none}
+body.tv.chartmode main{display:flex;align-items:center;justify-content:center}
+body.tv .chartwrap{overflow:hidden;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0}
+body.tv .tree{min-width:0;transform-origin:center center}
+body.tv .orgsec{margin:0;width:100%;height:100%}
+body.tv .orgsec h3{display:none}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
     <div class="brand"><h1>New Vista Enterprises Team</h1><p>Everyone across our four companies</p></div>
+    <div class="seg" role="group" aria-label="View"><button type="button" id="vTiles" aria-pressed="true">Tiles</button><button type="button" id="vChart" aria-pressed="false">Org chart</button></div>
     <button class="btn ghost" id="tvBtn" type="button">TV mode</button>
     <button class="btn" id="addBtn" type="button">+ Add person</button>
   </div>
@@ -168,6 +212,7 @@ body.tv .foot{display:none}
     <div class="fld"><label for="fName">Name</label><input class="in" id="fName" maxlength="80" autocomplete="off"></div>
     <div class="fld"><label for="fTitle">Position / title</label><input class="in" id="fTitle" maxlength="120" autocomplete="off"></div>
     <div class="fld"><span>Works for</span><div class="cos" id="fCos"></div></div>
+    <div class="fld"><label for="fBoss">Reports to</label><select class="in" id="fBoss"></select></div>
     <div class="fld"><span>Photo or employee card</span>
       <button class="drop" id="drop" type="button"><span class="thumb" id="thumb"></span><span><b id="dropText">Choose or drop an image</b><small>JPG or PNG. Big files are resized for you.</small></span></button>
       <input type="file" id="fFile" accept="image/*" hidden>
@@ -209,11 +254,11 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
 
   // ---------- data layer ----------
   let demo = [
-    {id:"d1",name:"Sample Owner",title:"President & CEO",companies:COMPANIES.map(c=>c.name),image:null,image_is_card:false,sort:1},
-    {id:"d2",name:"Sample Designer",title:"Landscape Designer",companies:["New Vista"],image:null,image_is_card:false,sort:null},
-    {id:"d3",name:"Sample Account Manager",title:"Account Manager",companies:["Green Estates"],image:null,image_is_card:false,sort:null},
-    {id:"d4",name:"Sample Technician",title:"Lawn Care Technician",companies:["Dura Lawn"],image:null,image_is_card:false,sort:null},
-    {id:"d5",name:"Sample Yard Manager",title:"Yard Manager",companies:["Buckeye Outdoor Supply","Green Estates"],image:null,image_is_card:false,sort:null}
+    {id:"d1",name:"Sample Owner",title:"President & CEO",companies:COMPANIES.map(c=>c.name),image:null,image_is_card:false,sort:1,reports_to:null},
+    {id:"d2",name:"Sample Designer",title:"Landscape Designer",companies:["New Vista"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d3",name:"Sample Account Manager",title:"Account Manager",companies:["Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d5"},
+    {id:"d4",name:"Sample Technician",title:"Lawn Care Technician",companies:["Dura Lawn"],image:null,image_is_card:false,sort:null,reports_to:"d1"},
+    {id:"d5",name:"Sample Yard Manager",title:"Yard Manager",companies:["Buckeye Outdoor Supply","Green Estates"],image:null,image_is_card:false,sort:null,reports_to:"d1"}
   ];
   const base = SUPABASE_URL.replace(/\/+$/,"").replace(/\/rest\/v1$/,"");
   async function rest(path, opts={}){
@@ -231,13 +276,13 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     list: async()=>demo.map(x=>({...x})),
     version: async()=>"demo",
     save: async a=>{
-      const row={id:a.p_id||("d"+Date.now()),name:a.p_name,title:a.p_title,companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,deleted_at:null,
+      const row={id:a.p_id||("d"+Date.now()),name:a.p_name,title:a.p_title,companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,reports_to:a.p_reports_to||null,deleted_at:null,
         image:a.p_keep_image?((demo.find(d=>d.id===a.p_id)||{}).image||null):a.p_image};
       demo = a.p_id ? demo.map(d=>d.id===a.p_id?row:d) : demo.concat(row); },
     remove: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
     restore: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:null}:d); }
   } : {
-    list: ()=>rest("people?select=id,name,title,companies,image,image_is_card,sort,deleted_at&order=sort.asc.nullslast,name.asc"),
+    list: ()=>rest("people?select=id,name,title,companies,image,image_is_card,sort,reports_to,deleted_at&order=sort.asc.nullslast,name.asc"),
     version: ()=>rest("rpc/board_version",{method:"POST",body:{}}),
     save: a=>rest("rpc/save_person",{method:"POST",body:a}),
     remove: id=>rest("rpc/remove_person",{method:"POST",body:{p_id:id}}),
@@ -245,7 +290,8 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   };
 
   // ---------- state ----------
-  let people=[], removed=[], tab="All", loaded=false, lastVersion=null;
+  let people=[], removed=[], tab="All", loaded=false, lastVersion=null, view="tiles";
+  try{ if(localStorage.getItem("nveView")==="chart") view="chart"; }catch(e){}
   let tv=false, tvIndex=0, tvTimer=null, pinned=null, wake=null;
 
   function note(text, err){ const n=$("note"); n.innerHTML=""; if(!text) return; const d=document.createElement("div"); d.textContent=text; if(err) d.className="err"; n.append(d); }
@@ -283,7 +329,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     return c;
   }
   function renderWall(target){
-    const t=target||tab, w=$("wall"); w.innerHTML="";
+    const t=target||tab, w=$("wall"); w.innerHTML=""; w.className="wall"; w.style.transform="";
     const list=sorted(people.filter(p=>inTab(p,t)));
     if(!list.length && !tv){
       const e=document.createElement("div"); e.className="empty"; const h=document.createElement("h2"), pp=document.createElement("p");
@@ -293,14 +339,65 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
       e.append(h,pp);
       if(loaded){ const b=document.createElement("button"); b.type="button"; b.className="btn"; b.textContent="+ Add person"; b.onclick=()=>withCode(()=>openForm(null)); e.append(b); }
       w.append(e);
-    } else list.forEach(p=>w.append(cardEl(p)));
+    } else if(view==="chart"){ w.className="chartwrap"; w.append(chartEl(list, t)); }
+    else list.forEach(p=>w.append(cardEl(p)));
     return list;
   }
-  function render(){ if(tv) showTV(); else { renderTabs(); renderWall(); } }
+
+  // ---------- org chart ----------
+  function nodeEl(p, isRoot){
+    const src=imgSrc(p), full=!!(p.image_is_card && src);
+    const n=document.createElement("div"); n.className="node"+(full?" full":"");
+    if(full){ const im=document.createElement("img"); im.className="cardimg"; im.alt=p.name+", "+(p.title||""); im.src=src; n.append(im); }
+    else {
+      const av=document.createElement("div"); av.className="av";
+      if(src){ const im=document.createElement("img"); im.alt=""; im.src=src; av.append(im); }
+      else av.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
+      n.append(av);
+      n.append(Object.assign(document.createElement("div"),{className:"nm",textContent:p.name}));
+      if(p.title) n.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
+      const ch=document.createElement("div"); ch.className="chips";
+      COMPANIES.filter(x=>(p.companies||[]).includes(x.name)).forEach(x=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=x.short; s.style.background=x.color; ch.append(s); });
+      n.append(ch);
+    }
+    if(isRoot && p.reports_to){ const boss=people.find(b=>b.id===p.reports_to); if(boss) n.append(Object.assign(document.createElement("div"),{className:"up",textContent:"Reports to "+boss.name})); }
+    if(!tv){ const e=document.createElement("button"); e.type="button"; e.className="edit"; e.textContent="Edit"; e.setAttribute("aria-label","Edit "+p.name); e.onclick=()=>openForm(p); n.append(e); }
+    return n;
+  }
+  function chartEl(list){
+    const ids=new Set(list.map(p=>p.id)), kids=new Map();
+    list.forEach(p=>{ if(p.reports_to && ids.has(p.reports_to) && p.reports_to!==p.id){ if(!kids.has(p.reports_to)) kids.set(p.reports_to,[]); kids.get(p.reports_to).push(p); } });
+    const roots=list.filter(p=>!p.reports_to || !ids.has(p.reports_to) || p.reports_to===p.id);
+    const seen=new Set();
+    function li(p, isRoot){
+      const el=document.createElement("li"); el.append(nodeEl(p,isRoot)); seen.add(p.id);
+      const ch=(kids.get(p.id)||[]).filter(c=>!seen.has(c.id));
+      if(ch.length){ const ul=document.createElement("ul"); ch.forEach(c=>ul.append(li(c,false))); el.append(ul); }
+      return el;
+    }
+    const tree=document.createElement("div"); tree.className="tree"; const ul=document.createElement("ul");
+    roots.forEach(r=>ul.append(li(r,true)));
+    list.filter(p=>!seen.has(p.id)).forEach(p=>ul.append(li(p,true)));  // anyone in a reporting loop
+    tree.append(ul); return tree;
+  }
+  function render(){
+    $("vTiles").setAttribute("aria-pressed",String(view==="tiles")); $("vChart").setAttribute("aria-pressed",String(view==="chart"));
+    document.body.classList.toggle("chartmode", view==="chart");
+    if(tv) showTV(); else { renderTabs(); renderWall(); }
+  }
+  function setView(v){ view=v; try{ localStorage.setItem("nveView",v); }catch(e){} render(); }
+  $("vTiles").onclick=()=>setView("tiles"); $("vChart").onclick=()=>setView("chart");
 
   // ---------- TV mode ----------
   function tvTabs(){ if(pinned) return [pinned]; const t=COMPANIES.map(c=>c.name).filter(n=>people.some(p=>inTab(p,n))); return t.length?t:["All"]; }
+  function fitChart(){
+    const m=document.querySelector("main"), tr=document.querySelector("#wall .tree"); if(!tr) return;
+    const box=$("wall"); tr.style.transform="none";
+    const W=box.clientWidth||m.clientWidth, H=box.clientHeight||m.clientHeight;
+    const s=Math.min(W/tr.scrollWidth, H/tr.scrollHeight, 1.9)*0.96; tr.style.transform="scale("+s+")";
+  }
   function fit(n){
+    if(view==="chart") return fitChart();
     const m=document.querySelector("main"), W=m.clientWidth-8, H=m.clientHeight-8, gap=Math.max(12,Math.min(28,W*.015));
     let best=0; for(let cols=1; cols<=Math.max(1,n); cols++){ const rows=Math.ceil(n/cols); best=Math.max(best, Math.min((W-gap*(cols-1))/cols, (H-gap*(rows-1))/rows/1.85)); }
     best=Math.min(best,420);
@@ -337,6 +434,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     const q=new URLSearchParams(location.search); const h=(location.hash||"").replace(/^#/,"").toLowerCase();
     const want = q.has("tv") ? (q.get("tv")||"").toLowerCase() : (h==="tv"||h.indexOf("tv-")===0 ? h.replace(/^tv-?/,"") : null);
     const th=q.get("theme"); if(th==="dark"||th==="light") document.documentElement.setAttribute("data-theme",th);
+    const v=q.get("view"); if(v==="chart"||v==="tiles"){ view=v; document.body.classList.toggle("chartmode", view==="chart"); }
     if(want===null) return;
     const c=COMPANIES.find(c=>c.hash===want); enterTV(c?c.name:null);
   }
@@ -369,6 +467,15 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
   COMPANIES.forEach((c,i)=>{ const l=document.createElement("label"); const inp=document.createElement("input"); inp.type="checkbox"; inp.value=c.name; inp.id="co"+i;
     const sw=document.createElement("span"); sw.className="sw"; sw.style.background=c.color; l.append(inp,c.name,sw); $("fCos").append(l); });
   function setThumb(url){ $("thumb").style.backgroundImage=url?'url("'+url.replace(/"/g,"%22")+'")':""; $("dropText").textContent=url?"Choose or drop to replace":"Choose or drop an image"; }
+  function fillBoss(p){
+    const sel=$("fBoss"); sel.innerHTML="";
+    sel.append(new Option("No one (top of the chart)",""));
+    const blocked=new Set();
+    if(p){ blocked.add(p.id); let grew=true; while(grew){ grew=false; people.forEach(x=>{ if(x.reports_to && blocked.has(x.reports_to) && !blocked.has(x.id)){ blocked.add(x.id); grew=true; } }); } }
+    people.filter(x=>!blocked.has(x.id)).sort((a,b)=>a.name.localeCompare(b.name))
+      .forEach(x=>sel.append(new Option(x.name+(x.title?" — "+x.title:""), x.id)));
+    sel.value = p && p.reports_to && !blocked.has(p.reports_to) && people.some(x=>x.id===p.reports_to) ? p.reports_to : "";
+  }
   function openForm(p){
     editing=p; newImage=null;
     $("dlgTitle").textContent=p?"Edit "+p.name:"Add person";
@@ -376,6 +483,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     $("fSort").value=p&&p.sort!=null?p.sort:""; $("fCard").checked=p?!!p.image_is_card:false; $("fRemove").checked=false;
     $("rmWrap").hidden=!(p&&imgSrc(p));
     $("fCos").querySelectorAll("input").forEach(i=>i.checked=p?(p.companies||[]).includes(i.value):(tab!=="All"&&i.value===tab));
+    fillBoss(p);
     setThumb(p?imgSrc(p):""); $("delBtn").hidden=!p; $("confirmDel").hidden=true; $("fErr").textContent="";
     $("save").disabled=false; $("save").textContent="Save";
     $("dlg").showModal(); $("fName").focus();
@@ -415,6 +523,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     const m=String(e&&e.message||"");
     if(/name_required/.test(m)) return "Add the person's name.";
     if(/bad_image/.test(m)) return "That image couldn't be saved. Try a different JPG or PNG.";
+    if(/self_report/.test(m)) return "Someone can't report to themselves. Pick a different person.";
     if(/not_found/.test(m)) return "This person was already removed by someone else.";
     if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Couldn't reach the board. Check your internet connection and try again.";
     return m || "Something went wrong. Try again.";
@@ -430,7 +539,8 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
     try{
       await api.save({ p_id:editing?editing.id:null, p_name:name, p_title:$("fTitle").value.trim(), p_companies:companies,
         p_image: keep ? null : (newImage||null), p_keep_image: !!(editing && keep), p_image_is_card:$("fCard").checked,
-        p_sort: sortRaw===""||isNaN(Number(sortRaw)) ? null : Math.round(Number(sortRaw)) });
+        p_sort: sortRaw===""||isNaN(Number(sortRaw)) ? null : Math.round(Number(sortRaw)),
+        p_reports_to: $("fBoss").value || null });
       $("dlg").close(); await refresh(true);
     }catch(e){ $("fErr").textContent=friendly(e); $("save").disabled=false; $("save").textContent="Save"; }
   });
@@ -450,7 +560,7 @@ const CHECK_SECONDS = 60;    // how often open pages look for changes
       else { try{ lastVersion=await api.version(); }catch(e){} }
       const rows=await api.list();
       const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""), title:String(r.title||""), companies:Array.isArray(r.companies)?r.companies:[],
-        image:r.image||null, image_is_card:!!r.image_is_card, sort:typeof r.sort==="number"?r.sort:null, deleted_at:r.deleted_at||null })).filter(p=>p.name);
+        image:r.image||null, image_is_card:!!r.image_is_card, sort:typeof r.sort==="number"?r.sort:null, reports_to:r.reports_to||null, deleted_at:r.deleted_at||null })).filter(p=>p.name);
       people=all.filter(p=>!p.deleted_at); removed=all.filter(p=>p.deleted_at);
       $("binBtn").hidden=!removed.length; $("binBtn").textContent="Recently removed ("+removed.length+")";
       const first=!loaded; loaded=true;
