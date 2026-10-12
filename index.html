@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NVE Team Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: sticky header with company tabs over a card wall; TV mode = one company per screen, cards sized to fill it. */
+:root{
+  --bg:#f2f4f0; --surface:#ffffff; --sunk:#e7ece6; --ink:#17201b; --muted:#59665f; --line:#d3dad3;
+  --accent:#2e6a3e; --accent-ink:#ffffff; --danger:#a3271b; --danger-soft:#fbe9e6;
+  --co-lead:#2a3631; --co-nv:#3d6b4a; --co-ge:#527d2c; --co-dl:#24786a; --co-bos:#8b5a2b;
+  --shadow:0 1px 2px rgba(20,35,25,.06),0 6px 20px rgba(20,35,25,.07);
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#101512; --surface:#1a211d; --sunk:#222b26; --ink:#edf2ee; --muted:#9caaa2; --line:#34403a;
+  --accent:#7cc690; --accent-ink:#0e1a12; --danger:#ff8f7f; --danger-soft:#3a1f1b;
+  --co-lead:#5d6f66; --co-nv:#4f8a60; --co-ge:#6a9a3a; --co-dl:#2f9583; --co-bos:#a86f37;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#101512; --surface:#1a211d; --sunk:#222b26; --ink:#edf2ee; --muted:#9caaa2; --line:#34403a;
+  --accent:#7cc690; --accent-ink:#0e1a12; --danger:#ff8f7f; --danger-soft:#3a1f1b;
+  --co-lead:#5d6f66; --co-nv:#4f8a60; --co-ge:#6a9a3a; --co-dl:#2f9583; --co-bos:#a86f37;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px 10px;max-width:1400px;margin:0 auto}
+.brand{flex:1;min-width:0}
+.brand h1{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:0 16px 12px;max-width:1400px;margin:0 auto;scrollbar-width:none}
+.tab{flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:transparent;padding:7px 12px;border-radius:999px;font-size:13.5px;font-weight:600;cursor:pointer}
+.tab .sw{width:9px;height:9px;border-radius:50%}
+.tab .n{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.tab[aria-selected="true"] .n{color:inherit;opacity:.7}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 14px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--danger);padding-inline:4px}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.btn:disabled{opacity:.55;cursor:default}
+
+.note{max-width:1400px;margin:14px auto 0;padding:0 16px}
+.note div{padding:11px 14px;border-radius:10px;background:var(--sunk);font-size:14px;line-height:1.45}
+.note div.err{background:var(--danger-soft);color:var(--danger)}
+
+/* Wall */
+main{max-width:1400px;margin:0 auto;padding:20px 16px 64px}
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}
+.card{position:relative;background:var(--surface);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.pic{aspect-ratio:4/5;max-width:100%;background:var(--sunk);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.ini{font-family:var(--display);font-weight:800;font-size:calc(var(--fs,1)*46px);color:var(--accent);letter-spacing:.02em}
+.card.full .pic{aspect-ratio:auto;background:var(--surface)}
+.card.full .pic img{height:auto;object-fit:contain}
+.info{padding:12px 14px 14px;min-width:0}
+.nm{font-family:var(--display);font-weight:700;font-size:calc(var(--fs,1)*16px);line-height:1.2;overflow-wrap:anywhere}
+.tt{color:var(--muted);font-size:calc(var(--fs,1)*13.5px);margin-top:3px;line-height:1.35}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.chip{font-size:calc(var(--fs,1)*11px);font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#fff;padding:3px 7px;border-radius:5px}
+.edit{position:absolute;top:8px;right:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:700;cursor:pointer}
+.empty{grid-column:1/-1;text-align:center;padding:64px 16px;border:1.5px dashed var(--line);border-radius:16px;color:var(--muted)}
+.empty h2{font-family:var(--display);color:var(--ink);font-size:20px;margin:0 0 6px}
+.empty p{margin:0 auto 16px;max-width:42ch;line-height:1.5}
+
+/* Form */
+dialog{border:0;border-radius:16px;padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100% - 32px);background:var(--surface);color:var(--ink);box-shadow:0 24px 64px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,16,12,.55)}
+.dlg{padding:22px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{font-family:var(--display);font-size:20px;margin:0}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld>label,.fld>span{font-size:13px;font-weight:700}
+.fld small{color:var(--muted);font-weight:500}
+.in{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.cos{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cos label{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:14px;font-weight:500}
+.cos label .sw{width:10px;height:10px;border-radius:50%;margin-left:auto}
+.cos input,.opt input{accent-color:var(--accent);width:16px;height:16px}
+.drop{display:flex;gap:14px;align-items:center;border:1.5px dashed var(--line);border-radius:12px;padding:12px;cursor:pointer;background:transparent;text-align:left;width:100%}
+.drop.over{border-color:var(--accent);background:var(--sunk)}
+.thumb{width:72px;height:90px;border-radius:8px;background:var(--sunk) center/cover no-repeat;flex:none}
+.drop b{display:block}
+.drop small{color:var(--muted)}
+.opt{display:flex;align-items:flex-start;gap:9px;font-size:14px;cursor:pointer;line-height:1.35}
+.err-line{color:var(--danger);font-size:13.5px;min-height:1.2em;margin:0}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.actions .sp{flex:1}
+.confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:14px;font-weight:600}
+
+/* TV mode */
+.tvhead{display:none}
+body.tv{overflow:hidden;cursor:none}
+body.tv header,body.tv .note div:not(.err){display:none}
+body.tv .tvhead{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:4vh 4vw 0;height:14vh}
+.tvhead .t{font-family:var(--display);font-weight:800;font-size:6vh;letter-spacing:-.02em;line-height:1;display:flex;align-items:center;gap:2vh}
+.tvhead .t i{width:2.2vh;height:2.2vh;border-radius:50%}
+.tvhead .co{font-size:2.2vh;color:var(--muted);text-align:right}
+.dots{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.dots b{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.dots b.on{background:var(--accent)}
+body.tv main{max-width:none;height:86vh;padding:3vh 4vw;display:flex;align-items:center;justify-content:center;overflow:hidden}
+body.tv .wall{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--gap,24px);animation:fade .6s ease}
+body.tv .card{width:var(--cw,220px)}
+body.tv .edit{display:none}
+.exit{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none}
+body.tv:hover .exit{display:inline-flex;cursor:pointer}
+.progress{position:fixed;left:0;bottom:0;height:4px;background:var(--accent);width:0;display:none}
+body.tv .progress{display:block}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){ body.tv .wall{animation:none} .progress{transition:none!important} }
+@media (max-width:560px){ .wall{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px} .cos{grid-template-columns:1fr} .brand p{display:none} }
+</style>
+<style>
+[hidden]{display:none!important}
+html{color-scheme:light}
+.codehint{color:var(--muted);font-size:13.5px;margin:-6px 0 0;line-height:1.45}
+.binlist{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto}
+.binrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.binrow .who{flex:1;min-width:0}
+.binrow .who b{display:block}
+.binrow .who span{color:var(--muted);font-size:13px}
+.binempty{color:var(--muted);font-size:14px;padding:8px 0}
+.foot{display:flex;justify-content:center;margin-top:28px}
+.linkbtn{background:none;border:0;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px}
+body.tv .foot{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><h1>New Vista Enterprises Team</h1><p>Everyone across our four companies</p></div>
+    <button class="btn ghost" id="tvBtn" type="button">TV mode</button>
+    <button class="btn" id="addBtn" type="button">+ Add person</button>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Companies"></nav>
+</header>
+<div class="note" id="note"></div>
+<div class="tvhead"><div class="t" id="tvTitle"></div><div class="co"><div>New Vista Enterprises</div><div class="dots" id="dots"></div></div></div>
+<main><div class="wall" id="wall"></div><div class="foot"><button class="linkbtn" id="binBtn" type="button" hidden>Recently removed</button></div></main>
+<button class="btn ghost exit" id="exitTv" type="button">Exit TV mode</button>
+<div class="progress" id="progress"></div>
+
+<dialog id="binDlg" aria-labelledby="binTitle">
+  <div class="dlg">
+    <h2 id="binTitle">Recently removed</h2>
+    <p class="codehint">People removed in the last 30 days. Restore puts them back on the board.</p>
+    <div id="binList" class="binlist"></div>
+    <p class="err-line" id="binErr" role="alert"></p>
+    <div class="actions"><span class="sp"></span><button class="btn ghost" type="button" id="binClose">Close</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form class="dlg" id="form" novalidate>
+    <h2 id="dlgTitle">Add person</h2>
+    <div class="fld"><label for="fName">Name</label><input class="in" id="fName" maxlength="80" autocomplete="off"></div>
+    <div class="fld"><label for="fTitle">Position / title</label><input class="in" id="fTitle" maxlength="120" autocomplete="off"></div>
+    <div class="fld"><span>Works for</span><div class="cos" id="fCos"></div></div>
+    <div class="fld"><span>Photo or employee card</span>
+      <button class="drop" id="drop" type="button"><span class="thumb" id="thumb"></span><span><b id="dropText">Choose or drop an image</b><small>JPG or PNG. Big files are resized for you.</small></span></button>
+      <input type="file" id="fFile" accept="image/*" hidden>
+    </div>
+    <label class="opt"><input type="checkbox" id="fCard"> This image is a finished employee card that already shows the name and title</label>
+    <label class="opt" id="rmWrap" hidden><input type="checkbox" id="fRemove"> Remove the current image</label>
+    <div class="fld"><label for="fSort">Sort order <small>optional, lower numbers show first</small></label><input class="in" id="fSort" type="number" step="1" style="max-width:140px"></div>
+    <p class="err-line" id="fErr" role="alert"></p>
+    <div class="confirm" id="confirmDel" hidden>Remove this person? You can restore them for 30 days.<span style="flex:1"></span><button class="btn ghost" type="button" id="noDel">Keep</button><button class="btn danger" type="button" id="yesDel">Remove</button></div>
+    <div class="actions">
+      <button class="btn quiet" type="button" id="delBtn" hidden>Remove person</button><span class="sp"></span>
+      <button class="btn ghost" type="button" id="cancel">Cancel</button><button class="btn" type="submit" id="save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* =====================================================================
+   SETUP — paste your two Supabase values here (Project Settings → API).
+   Leave them empty to try the board in demo mode.
+   ===================================================================== */
+const SUPABASE_URL = "https://pcrazwyuvlimmojiouuy.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DzS50Gig-_PiWkH5mA5MJw_VaBQLBRZ";   // publishable key (safe to put in a web page)
+
+const COMPANIES = [
+  { name:"Leadership",             short:"Leadership",    hash:"leadership",    color:"var(--co-lead)" },
+  { name:"New Vista",              short:"New Vista",     hash:"new-vista",     color:"var(--co-nv)" },
+  { name:"Green Estates",          short:"Green Estates", hash:"green-estates", color:"var(--co-ge)" },
+  { name:"Dura Lawn",              short:"Dura Lawn",     hash:"dura-lawn",     color:"var(--co-dl)" },
+  { name:"Buckeye Outdoor Supply", short:"Buckeye",       hash:"buckeye",       color:"var(--co-bos)" }
+];
+const TV_SECONDS = 20;       // each company stays on a TV this long
+const CHECK_SECONDS = 60;    // how often open pages look for changes
+
+(function(){
+  const $ = id => document.getElementById(id);
+  const BY = Object.fromEntries(COMPANIES.map(c=>[c.name,c]));
+  const DEMO = !SUPABASE_URL || !SUPABASE_KEY;
+
+  // ---------- data layer ----------
+  let demo = [
+    {id:"d1",name:"Sample Owner",title:"President & CEO",companies:COMPANIES.map(c=>c.name),image:null,image_is_card:false,sort:1},
+    {id:"d2",name:"Sample Designer",title:"Landscape Designer",companies:["New Vista"],image:null,image_is_card:false,sort:null},
+    {id:"d3",name:"Sample Account Manager",title:"Account Manager",companies:["Green Estates"],image:null,image_is_card:false,sort:null},
+    {id:"d4",name:"Sample Technician",title:"Lawn Care Technician",companies:["Dura Lawn"],image:null,image_is_card:false,sort:null},
+    {id:"d5",name:"Sample Yard Manager",title:"Yard Manager",companies:["Buckeye Outdoor Supply","Green Estates"],image:null,image_is_card:false,sort:null}
+  ];
+  const base = SUPABASE_URL.replace(/\/+$/,"").replace(/\/rest\/v1$/,"");
+  async function rest(path, opts={}){
+    const res = await fetch(base + "/rest/v1/" + path, {
+      method: opts.method || "GET",
+      headers: { apikey: SUPABASE_KEY, "Content-Type":"application/json", Accept:"application/json" },
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      cache: "no-store"
+    });
+    const text = await res.text(); let data = null; try { data = text ? JSON.parse(text) : null; } catch(e){}
+    if(!res.ok){ const err = new Error((data && (data.message||data.hint)) || ("HTTP "+res.status)); err.status=res.status; throw err; }
+    return data;
+  }
+  const api = DEMO ? {
+    list: async()=>demo.map(x=>({...x})),
+    version: async()=>"demo",
+    save: async a=>{
+      const row={id:a.p_id||("d"+Date.now()),name:a.p_name,title:a.p_title,companies:a.p_companies,image_is_card:a.p_image_is_card,sort:a.p_sort,deleted_at:null,
+        image:a.p_keep_image?((demo.find(d=>d.id===a.p_id)||{}).image||null):a.p_image};
+      demo = a.p_id ? demo.map(d=>d.id===a.p_id?row:d) : demo.concat(row); },
+    remove: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:new Date().toISOString()}:d); },
+    restore: async id=>{ demo=demo.map(d=>d.id===id?{...d,deleted_at:null}:d); }
+  } : {
+    list: ()=>rest("people?select=id,name,title,companies,image,image_is_card,sort,deleted_at&order=sort.asc.nullslast,name.asc"),
+    version: ()=>rest("rpc/board_version",{method:"POST",body:{}}),
+    save: a=>rest("rpc/save_person",{method:"POST",body:a}),
+    remove: id=>rest("rpc/remove_person",{method:"POST",body:{p_id:id}}),
+    restore: id=>rest("rpc/restore_person",{method:"POST",body:{p_id:id}})
+  };
+
+  // ---------- state ----------
+  let people=[], removed=[], tab="All", loaded=false, lastVersion=null;
+  let tv=false, tvIndex=0, tvTimer=null, pinned=null, wake=null;
+
+  function note(text, err){ const n=$("note"); n.innerHTML=""; if(!text) return; const d=document.createElement("div"); d.textContent=text; if(err) d.className="err"; n.append(d); }
+  function inTab(p,t){ return t==="All" || (p.companies||[]).includes(t); }
+  function sorted(list){ return list.slice().sort((a,b)=>{ const sa=a.sort==null?9999:a.sort, sb=b.sort==null?9999:b.sort; return sa-sb || String(a.name).localeCompare(String(b.name)); }); }
+  function initials(n){ return String(n).split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(""); }
+  function imgSrc(p){ return (typeof p.image==="string" && p.image.indexOf("data:image/")===0) ? p.image : ""; }
+
+  // ---------- render ----------
+  function renderTabs(){
+    const nav=$("tabs"); nav.innerHTML="";
+    [{name:"All",color:""}].concat(COMPANIES).forEach(c=>{
+      const b=document.createElement("button"); b.type="button"; b.className="tab"; b.setAttribute("role","tab"); b.setAttribute("aria-selected",String(c.name===tab));
+      if(c.color){ const s=document.createElement("span"); s.className="sw"; s.style.background=c.color; b.append(s); }
+      b.append(c.name); const n=document.createElement("span"); n.className="n"; n.textContent=people.filter(p=>inTab(p,c.name)).length; b.append(n);
+      b.onclick=()=>{ tab=c.name; renderTabs(); renderWall(); }; nav.append(b);
+    });
+  }
+  function cardEl(p){
+    const src=imgSrc(p), full=!!(p.image_is_card && src);
+    const c=document.createElement("article"); c.className="card"+(full?" full":"");
+    const pic=document.createElement("div"); pic.className="pic";
+    if(src){ const im=document.createElement("img"); im.alt=full?(p.name+", "+(p.title||"")):""; im.src=src; pic.append(im); }
+    else pic.append(Object.assign(document.createElement("span"),{className:"ini",textContent:initials(p.name)}));
+    c.append(pic);
+    if(!full){
+      const d=document.createElement("div"); d.className="info";
+      d.append(Object.assign(document.createElement("div"),{className:"nm",textContent:p.name}));
+      if(p.title) d.append(Object.assign(document.createElement("div"),{className:"tt",textContent:p.title}));
+      const ch=document.createElement("div"); ch.className="chips";
+      COMPANIES.filter(x=>(p.companies||[]).includes(x.name)).forEach(x=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=x.short; s.style.background=x.color; ch.append(s); });
+      d.append(ch); c.append(d);
+    }
+    if(!tv){ const e=document.createElement("button"); e.type="button"; e.className="edit"; e.textContent="Edit"; e.setAttribute("aria-label","Edit "+p.name); e.onclick=()=>withCode(()=>openForm(p)); c.append(e); }
+    return c;
+  }
+  function renderWall(target){
+    const t=target||tab, w=$("wall"); w.innerHTML="";
+    const list=sorted(people.filter(p=>inTab(p,t)));
+    if(!list.length && !tv){
+      const e=document.createElement("div"); e.className="empty"; const h=document.createElement("h2"), pp=document.createElement("p");
+      if(!loaded){ h.textContent="Loading the team…"; pp.textContent="Cards for everyone at New Vista, Green Estates, Dura Lawn and Buckeye Outdoor Supply will appear here."; }
+      else if(people.length){ h.textContent="No one in "+t+" yet"; pp.textContent="Add someone and tick "+t+" under “Works for”."; }
+      else { h.textContent="The board is empty"; pp.textContent="Add the first person with their name, title, companies and a photo or finished employee card."; }
+      e.append(h,pp);
+      if(loaded){ const b=document.createElement("button"); b.type="button"; b.className="btn"; b.textContent="+ Add person"; b.onclick=()=>withCode(()=>openForm(null)); e.append(b); }
+      w.append(e);
+    } else list.forEach(p=>w.append(cardEl(p)));
+    return list;
+  }
+  function render(){ if(tv) showTV(); else { renderTabs(); renderWall(); } }
+
+  // ---------- TV mode ----------
+  function tvTabs(){ if(pinned) return [pinned]; const t=COMPANIES.map(c=>c.name).filter(n=>people.some(p=>inTab(p,n))); return t.length?t:["All"]; }
+  function fit(n){
+    const m=document.querySelector("main"), W=m.clientWidth-8, H=m.clientHeight-8, gap=Math.max(12,Math.min(28,W*.015));
+    let best=0; for(let cols=1; cols<=Math.max(1,n); cols++){ const rows=Math.ceil(n/cols); best=Math.max(best, Math.min((W-gap*(cols-1))/cols, (H-gap*(rows-1))/rows/1.85)); }
+    best=Math.min(best,420);
+    const set=v=>{ document.body.style.setProperty("--cw",v+"px"); document.body.style.setProperty("--fs",(v/200).toFixed(2)); };
+    document.body.style.setProperty("--gap",gap+"px"); set(best);
+    const w=$("wall"); for(let i=0;i<25 && (w.scrollHeight>H || w.scrollWidth>W);i++){ best*=.95; set(best); }
+  }
+  function showTV(){
+    const tabs=tvTabs(); tvIndex%=tabs.length; const t=tabs[tvIndex];
+    const title=$("tvTitle"); title.innerHTML=""; if(BY[t]){ const i=document.createElement("i"); i.style.background=BY[t].color; title.append(i); } title.append(t);
+    const d=$("dots"); d.innerHTML=""; if(tabs.length>1) tabs.forEach((_,i)=>d.append(Object.assign(document.createElement("b"),{className:i===tvIndex?"on":""})));
+    const list=renderWall(t); fit(list.length); setTimeout(()=>fit(list.length),900);
+    const pb=$("progress"); pb.style.transition="none"; pb.style.width="0";
+    if(tabs.length>1) requestAnimationFrame(()=>requestAnimationFrame(()=>{ pb.style.transition="width "+TV_SECONDS+"s linear"; pb.style.width="100%"; }));
+  }
+  async function enterTV(pin){
+    tv=true; pinned=pin||null; tvIndex=0; document.body.classList.add("tv");
+    clearInterval(tvTimer); showTV(); tvTimer=setInterval(()=>{ tvIndex++; showTV(); }, TV_SECONDS*1000);
+    try{ if(navigator.wakeLock) wake=await navigator.wakeLock.request("screen"); }catch(e){}
+  }
+  function exitTV(){
+    tv=false; clearInterval(tvTimer); document.body.classList.remove("tv");
+    try{ wake && wake.release(); }catch(e){} wake=null;
+    try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){}
+    ["--cw","--fs","--gap"].forEach(k=>document.body.style.removeProperty(k));
+    if(/tv/.test(location.hash)) history.replaceState(null,"",location.pathname+location.search.replace(/[?&]tv[^&]*/,"").replace(/^&/,"?"));
+    render();
+  }
+  $("tvBtn").onclick=()=>{ try{ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(()=>{}); }catch(e){} enterTV(tab==="All"?null:tab); };
+  $("exitTv").onclick=exitTV;
+  window.addEventListener("resize",()=>{ if(tv) showTV(); });
+  document.addEventListener("keydown",e=>{ if(tv && e.key==="Escape") exitTV(); });
+  function fromAddress(){
+    const q=new URLSearchParams(location.search); const h=(location.hash||"").replace(/^#/,"").toLowerCase();
+    const want = q.has("tv") ? (q.get("tv")||"").toLowerCase() : (h==="tv"||h.indexOf("tv-")===0 ? h.replace(/^tv-?/,"") : null);
+    const th=q.get("theme"); if(th==="dark"||th==="light") document.documentElement.setAttribute("data-theme",th);
+    if(want===null) return;
+    const c=COMPANIES.find(c=>c.hash===want); enterTV(c?c.name:null);
+  }
+
+  // ---------- open editing (no code needed) ----------
+  function withCode(next){ next(); }
+  $("addBtn").onclick=()=>openForm(null);
+
+  // ---------- recently removed ----------
+  function renderBin(){
+    const list=$("binList"); list.innerHTML=""; $("binErr").textContent="";
+    const recent=removed.slice().sort((a,b)=>String(b.deleted_at).localeCompare(String(a.deleted_at)));
+    if(!recent.length){ list.append(Object.assign(document.createElement("div"),{className:"binempty",textContent:"Nothing has been removed recently."})); return; }
+    recent.forEach(p=>{
+      const row=document.createElement("div"); row.className="binrow";
+      const who=document.createElement("div"); who.className="who";
+      who.append(Object.assign(document.createElement("b"),{textContent:p.name}));
+      let when=""; try{ when=new Date(p.deleted_at).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }catch(e){}
+      who.append(Object.assign(document.createElement("span"),{textContent:[p.title, when?("Removed "+when):""].filter(Boolean).join(" · ")}));
+      const b=document.createElement("button"); b.type="button"; b.className="btn ghost"; b.textContent="Restore";
+      b.onclick=async()=>{ b.disabled=true; try{ await api.restore(p.id); await refresh(true); renderBin(); } catch(e){ $("binErr").textContent=friendly(e); b.disabled=false; } };
+      row.append(who,b); list.append(row);
+    });
+  }
+  $("binBtn").onclick=()=>{ renderBin(); $("binDlg").showModal(); };
+  $("binClose").onclick=()=>$("binDlg").close();
+
+  // ---------- form ----------
+  let editing=null, newImage=null;
+  COMPANIES.forEach((c,i)=>{ const l=document.createElement("label"); const inp=document.createElement("input"); inp.type="checkbox"; inp.value=c.name; inp.id="co"+i;
+    const sw=document.createElement("span"); sw.className="sw"; sw.style.background=c.color; l.append(inp,c.name,sw); $("fCos").append(l); });
+  function setThumb(url){ $("thumb").style.backgroundImage=url?'url("'+url.replace(/"/g,"%22")+'")':""; $("dropText").textContent=url?"Choose or drop to replace":"Choose or drop an image"; }
+  function openForm(p){
+    editing=p; newImage=null;
+    $("dlgTitle").textContent=p?"Edit "+p.name:"Add person";
+    $("fName").value=p?p.name:""; $("fTitle").value=p?(p.title||""):"";
+    $("fSort").value=p&&p.sort!=null?p.sort:""; $("fCard").checked=p?!!p.image_is_card:false; $("fRemove").checked=false;
+    $("rmWrap").hidden=!(p&&imgSrc(p));
+    $("fCos").querySelectorAll("input").forEach(i=>i.checked=p?(p.companies||[]).includes(i.value):(tab!=="All"&&i.value===tab));
+    setThumb(p?imgSrc(p):""); $("delBtn").hidden=!p; $("confirmDel").hidden=true; $("fErr").textContent="";
+    $("save").disabled=false; $("save").textContent="Save";
+    $("dlg").showModal(); $("fName").focus();
+  }
+  $("cancel").onclick=()=>$("dlg").close();
+  function shrink(file){
+    return new Promise((ok,bad)=>{
+      const u=URL.createObjectURL(file), im=new Image();
+      im.onload=()=>{ URL.revokeObjectURL(u);
+        for(const [max,q] of [[1000,.84],[860,.8],[720,.76],[600,.72]]){
+          const s=Math.min(1,max/Math.max(im.width,im.height)), cv=document.createElement("canvas");
+          cv.width=Math.round(im.width*s); cv.height=Math.round(im.height*s);
+          const cx=cv.getContext("2d"); cx.fillStyle="#ffffff"; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(im,0,0,cv.width,cv.height);
+          const d=cv.toDataURL("image/jpeg",q); if(d.length<420000) return ok(d);
+        }
+        bad(new Error("That image is too detailed to store. Try a smaller file."));
+      };
+      im.onerror=()=>{ URL.revokeObjectURL(u); bad(new Error("That image couldn't be read. Try a JPG or PNG.")); };
+      im.src=u;
+    });
+  }
+  async function pick(file){
+    if(!file || !/^image\//.test(file.type)){ $("fErr").textContent="Choose an image file, such as a JPG or PNG."; return; }
+    $("fErr").textContent=""; $("save").disabled=true;
+    try{ newImage=await shrink(file); setThumb(newImage); $("fRemove").checked=false; }
+    catch(e){ $("fErr").textContent=e.message; }
+    $("save").disabled=false;
+  }
+  const drop=$("drop");
+  drop.onclick=()=>$("fFile").click();
+  $("fFile").onchange=e=>{ pick(e.target.files[0]); e.target.value=""; };
+  ["dragenter","dragover"].forEach(t=>drop.addEventListener(t,e=>{ e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(t=>drop.addEventListener(t,e=>{ e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop",e=>pick(e.dataTransfer.files[0]));
+
+  function friendly(e){
+    const m=String(e&&e.message||"");
+    if(/name_required/.test(m)) return "Add the person's name.";
+    if(/bad_image/.test(m)) return "That image couldn't be saved. Try a different JPG or PNG.";
+    if(/not_found/.test(m)) return "This person was already removed by someone else.";
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Couldn't reach the board. Check your internet connection and try again.";
+    return m || "Something went wrong. Try again.";
+  }
+  $("form").addEventListener("submit", async ev=>{
+    ev.preventDefault();
+    const name=$("fName").value.trim(), companies=[...$("fCos").querySelectorAll("input:checked")].map(i=>i.value);
+    if(!name){ $("fErr").textContent="Add the person's name."; $("fName").focus(); return; }
+    if(!companies.length){ $("fErr").textContent="Tick at least one company under “Works for”."; return; }
+    const sortRaw=$("fSort").value.trim();
+    const keep = !newImage && !$("fRemove").checked;
+    $("save").disabled=true; $("save").textContent=newImage?"Uploading…":"Saving…"; $("fErr").textContent="";
+    try{
+      await api.save({ p_id:editing?editing.id:null, p_name:name, p_title:$("fTitle").value.trim(), p_companies:companies,
+        p_image: keep ? null : (newImage||null), p_keep_image: !!(editing && keep), p_image_is_card:$("fCard").checked,
+        p_sort: sortRaw===""||isNaN(Number(sortRaw)) ? null : Math.round(Number(sortRaw)) });
+      $("dlg").close(); await refresh(true);
+    }catch(e){ $("fErr").textContent=friendly(e); $("save").disabled=false; $("save").textContent="Save"; }
+  });
+  $("delBtn").onclick=()=>{ $("confirmDel").hidden=false; };
+  $("noDel").onclick=()=>{ $("confirmDel").hidden=true; };
+  $("yesDel").onclick=async()=>{
+    if(!editing) return; $("yesDel").disabled=true;
+    try{ await api.remove(editing.id); $("dlg").close(); await refresh(true); }
+    catch(e){ $("fErr").textContent=friendly(e); }
+    $("yesDel").disabled=false;
+  };
+
+  // ---------- loading & change checks ----------
+  async function refresh(force){
+    try{
+      if(!force && loaded){ const v=await api.version(); if(v===lastVersion) return; lastVersion=v; }
+      else { try{ lastVersion=await api.version(); }catch(e){} }
+      const rows=await api.list();
+      const all=(rows||[]).map(r=>({ id:r.id, name:String(r.name||""), title:String(r.title||""), companies:Array.isArray(r.companies)?r.companies:[],
+        image:r.image||null, image_is_card:!!r.image_is_card, sort:typeof r.sort==="number"?r.sort:null, deleted_at:r.deleted_at||null })).filter(p=>p.name);
+      people=all.filter(p=>!p.deleted_at); removed=all.filter(p=>p.deleted_at);
+      $("binBtn").hidden=!removed.length; $("binBtn").textContent="Recently removed ("+removed.length+")";
+      const first=!loaded; loaded=true;
+      if(DEMO) note("Demo mode: changes aren't saved. Add your Supabase details at the top of index.html to go live.");
+      else note("");
+      if(!tv) render(); else if(first) showTV();
+    }catch(e){
+      if(!loaded){ loaded=true; render(); note("Couldn't load the team. Check the internet connection, then reload. If this keeps happening, the board's database settings at the top of index.html may be wrong.", true); }
+    }
+  }
+  render();
+  fromAddress();
+  refresh(true);
+  setInterval(()=>{ if(!document.querySelector("dialog[open]")) refresh(false); }, CHECK_SECONDS*1000);
+  if(tv || new URLSearchParams(location.search).has("tv")) setTimeout(()=>location.reload(), 12*60*60*1000);
+})();
+</script>
+</body>
+</html>
